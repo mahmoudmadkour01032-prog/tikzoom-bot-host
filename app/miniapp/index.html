@@ -1,0 +1,1270 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>TikZoom — منصة استضافة بوتات تلجرام</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --green: #16a34a;
+      --green-soft: #16a34a22;
+      --blue: #2563eb;
+      --blue-soft: #2563eb22;
+      --red: #dc2626;
+      --red-soft: #dc262622;
+      --yellow: #d97706;
+      --bg: var(--tg-theme-bg-color, #0d1117);
+      --fg: var(--tg-theme-text-color, #f1f5f9);
+      --card: var(--tg-theme-secondary-bg-color, #1b2027);
+      --hint: var(--tg-theme-hint-color, #94a3b8);
+      --border: rgba(255,255,255,.06);
+    }
+    * { box-sizing: border-box; }
+    html, body { padding: 0; margin: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, "Tahoma", sans-serif;
+      padding: 14px;
+      background: var(--bg);
+      color: var(--fg);
+      min-height: 100vh;
+      line-height: 1.45;
+    }
+    h1 { font-size: 18px; margin: 0 0 12px; text-align: center; letter-spacing: .3px; font-weight: 700; }
+    h3 { margin: 0 0 8px; font-size: 15px; font-weight: 700; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px; padding: 14px; margin-bottom: 12px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.18);
+    }
+    .row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 6px 0; }
+    .badge {
+      display: inline-block; padding: 4px 10px; border-radius: 999px;
+      font-size: 11.5px; font-weight: 600;
+    }
+    .b-green { background: var(--green); color: white; }
+    .b-blue  { background: var(--blue);  color: white; }
+    .b-red   { background: var(--red);   color: white; }
+    .b-gray  { background: #4b5563; color: white; }
+    .b-yellow{ background: var(--yellow); color: white; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+    .stat { text-align: center; padding: 10px 6px; border-radius: 10px; background: rgba(255,255,255,.04); }
+    .stat .v { font-size: 22px; font-weight: 800; }
+    .stat .l { font-size: 11px; opacity: .8; margin-top: 2px; }
+    .bot {
+      padding: 12px; border-radius: 12px; background: rgba(255,255,255,.04);
+      margin-bottom: 8px; border: 1px solid var(--border);
+    }
+    .bot .name { font-weight: 700; }
+    .bot .lang { opacity: .8; font-size: 12px; margin-top: 2px; }
+    .muted { opacity: .7; font-size: 12px; }
+    button {
+      padding: 10px 12px; border-radius: 10px; border: none; font-weight: 700; cursor: pointer;
+      font-size: 13px; transition: transform .04s ease;
+    }
+    button:active { transform: scale(.97); }
+    button:disabled { opacity: .55; cursor: not-allowed; }
+    .btn-green  { background: var(--green); color: #fff; }
+    .btn-blue   { background: var(--blue);  color: #fff; }
+    .btn-red    { background: var(--red);   color: #fff; }
+    .btn-ghost  { background: rgba(255,255,255,.06); color: var(--fg); }
+    pre {
+      white-space: pre-wrap; word-break: break-all; font-size: 12px;
+      background: rgba(0,0,0,.3); padding: 8px; border-radius: 8px;
+      max-height: 240px; overflow: auto; margin: 6px 0 0;
+    }
+    .tab-row {
+      display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px;
+      background: var(--card); padding: 4px; border-radius: 12px;
+      position: sticky; top: 0; z-index: 5; margin-bottom: 12px;
+    }
+    .tab-row button {
+      padding: 8px 4px; font-size: 11.5px; background: transparent; color: var(--fg);
+      border-radius: 9px;
+    }
+    .tab-row button.active { background: var(--blue); color: white; }
+    .err { color: #fca5a5; }
+    .ok  { color: #86efac; }
+    .actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .actions button { flex: 1; min-width: 80px; }
+    .quote {
+      background: rgba(37,99,235,.08); border-inline-start: 3px solid var(--blue);
+      padding: 10px 12px; border-radius: 8px; font-size: 13px;
+    }
+    input[type="text"], input[type="number"], textarea, select {
+      background: rgba(255,255,255,.04); color: var(--fg);
+      border: 1px solid var(--border); border-radius: 8px;
+      padding: 10px 12px; width: 100%; font-size: 14px; font-family: inherit;
+    }
+    textarea { min-height: 80px; resize: vertical; }
+    label { display: block; font-size: 12px; opacity: .85; margin: 8px 0 4px; }
+    .file-zone {
+      border: 2px dashed rgba(255,255,255,.18); border-radius: 12px;
+      padding: 22px 12px; text-align: center; font-size: 13px;
+      cursor: pointer; transition: background .15s;
+    }
+    .file-zone:hover { background: rgba(255,255,255,.04); }
+    .file-zone .p { font-size: 24px; margin-bottom: 4px; }
+    .copy-btn { padding: 6px 10px; font-size: 11px; }
+    .toast {
+      position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
+      background: rgba(0,0,0,.85); color: white; padding: 10px 16px;
+      border-radius: 10px; font-size: 13px; z-index: 100;
+      max-width: 90%; text-align: center;
+    }
+    .invite-link { display: flex; gap: 4px; align-items: center; }
+    .invite-link code {
+      flex: 1; background: rgba(255,255,255,.06); padding: 8px;
+      border-radius: 8px; font-size: 11.5px; word-break: break-all;
+    }
+    .mode-pick { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    .mode-pick button {
+      padding: 12px 8px; flex-direction: column; display: flex;
+      align-items: center; gap: 4px; line-height: 1.2;
+    }
+    .mode-pick button.active { box-shadow: 0 0 0 2px var(--green); }
+    .tier-pick { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
+    .tier-pick button {
+      padding: 10px 4px; font-size: 12px; flex-direction: column; gap: 2px;
+      display: flex; align-items: center; line-height: 1.1;
+    }
+    .tier-pick button.active { box-shadow: 0 0 0 2px var(--green); }
+    .center { text-align: center; }
+  </style>
+</head>
+<body>
+  <h1>🤖 TikZoom — منصة الاستضافة</h1>
+
+  <div class="tab-row" id="tabs">
+    <button data-tab="home"   class="active">🏠</button>
+    <button data-tab="upload">📤</button>
+    <button data-tab="bots">🤖</button>
+    <button data-tab="mcv"    style="background: var(--red); color: #fff;">🔴 MCV</button>
+    <button data-tab="invite">👥</button>
+    <button data-tab="admin"  id="adminTabBtn" style="display:none">⚙️</button>
+  </div>
+
+  <div id="root"><div class="card center">جاري التحميل…</div></div>
+
+<script>
+const tg = window.Telegram && window.Telegram.WebApp;
+if (tg) { tg.ready(); tg.expand(); tg.enableClosingConfirmation(); }
+
+const initData = tg ? tg.initData : '';
+const headers = { 'x-tg-init-data': initData };
+
+let state = { tab: 'home', me: null };
+
+function el(tag, attrs = {}, ...children) {
+  const e = document.createElement(tag);
+  for (const k in attrs) {
+    if (k === 'class') e.className = attrs[k];
+    else if (k.startsWith('on') && typeof attrs[k] === 'function') e.addEventListener(k.slice(2), attrs[k]);
+    else if (k === 'style') e.style.cssText = attrs[k];
+    else e.setAttribute(k, attrs[k]);
+  }
+  for (const c of children.flat()) {
+    if (c == null || c === false) continue;
+    e.append(c instanceof Node ? c : document.createTextNode(String(c)));
+  }
+  return e;
+}
+
+function toast(msg, ok = true) {
+  const t = el('div', { class: 'toast' }, msg);
+  t.style.background = ok ? 'rgba(22,163,74,.95)' : 'rgba(220,38,38,.95)';
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2400);
+}
+
+async function api(path, opts = {}) {
+  const init = { ...opts, headers: { ...(opts.headers || {}), ...headers } };
+  const r = await fetch(path, init);
+  const ct = r.headers.get('content-type') || '';
+  const body = ct.includes('application/json') ? await r.json() : await r.text();
+  if (!r.ok) {
+    const msg = (body && body.detail) || body || ('HTTP ' + r.status);
+    throw new Error(typeof msg === 'string' ? msg : JSON.stringify(msg));
+  }
+  return body;
+}
+
+function statusBadge(s) {
+  const map = { running: 'b-green', stopped: 'b-gray', crashed: 'b-red', pending: 'b-yellow' };
+  return el('span', { class: 'badge ' + (map[s] || 'b-gray') }, s);
+}
+
+function modeBadge(useWebhook) {
+  return useWebhook
+    ? el('span', { class: 'badge b-blue' }, '🌐 Webhook')
+    : el('span', { class: 'badge b-yellow' }, '⚡ Polling');
+}
+
+function tierBadge(t) {
+  return el('span', { class: 'badge b-blue' }, 'T' + t);
+}
+
+// ---------- Home tab ---------- //
+function renderHome(data) {
+  const u = data.user || {};
+  return el('div', {},
+    el('div', { class: 'card' },
+      el('div', { class: 'row' },
+        el('div', { style: 'font-weight: 700; font-size: 15px;' },
+          '👤 ' + (u.first_name || '') + (u.last_name ? ' ' + u.last_name : '')),
+        el('div', {},
+          data.is_admin ? el('span', { class: 'badge b-blue' }, '👑 أدمن') : '',
+          ' ',
+          data.is_vip ? el('span', { class: 'badge b-green' }, '⭐ VIP') : '')),
+      u.username ? el('div', { class: 'muted' }, '@' + u.username) : '',
+      el('div', { class: 'grid-3', style: 'margin-top: 12px;' },
+        el('div', { class: 'stat' }, el('div', { class: 'v' }, String(data.points || 0)),    el('div', { class: 'l' }, '💎 النقاط')),
+        el('div', { class: 'stat' }, el('div', { class: 'v' }, String(data.referrals || 0)), el('div', { class: 'l' }, '👥 الإحالات')),
+        el('div', { class: 'stat' }, el('div', { class: 'v' }, String((data.bots || []).length)), el('div', { class: 'l' }, '🤖 البوتات')))),
+    el('div', { class: 'card' },
+      el('h3', {}, '⚡ إجراءات سريعة'),
+      el('div', { class: 'actions' },
+        el('button', { class: 'btn-red',   onclick: () => switchTab('mcv') }, '🔴 سأل MCV'),
+        el('button', { class: 'btn-green', onclick: () => switchTab('upload') }, '📤 رفع بوت جديد'),
+        el('button', { class: 'btn-blue',  onclick: () => switchTab('bots') }, '🤖 إدارة بوتاتي'),
+        el('button', { class: 'btn-blue',  onclick: () => switchTab('invite') }, '👥 رابط الإحالة'))),
+    el('div', { class: 'card' },
+      el('h3', {}, '📋 السرعات المتاحة'),
+      renderTierTable(data)));
+}
+
+function renderTierTable(data) {
+  const tiers = [
+    { l: 1, n: 'مجانية',   need: 0,  files: 1 },
+    { l: 2, n: 'سرعة 2',   need: 5,  files: 1 },
+    { l: 3, n: 'سرعة 3',   need: 10, files: 1 },
+    { l: 4, n: 'سرعة 4',   need: 20, files: 1 },
+    { l: 5, n: 'VIP / Admin', need: 0, files: 5, vipOnly: true },
+  ];
+  return el('div', { style: 'display: grid; gap: 4px;' },
+    tiers.map(t => {
+      const unlocked = t.vipOnly
+        ? (data.is_vip || data.is_admin)
+        : (data.points || 0) >= t.need;
+      return el('div', { class: 'row', style: 'padding: 6px 0;' },
+        el('div', {}, '🎚 T' + t.l + ' — ' + t.n),
+        el('div', {},
+          el('span', { class: 'badge ' + (unlocked ? 'b-green' : 'b-gray'), style: 'margin-right: 4px;' },
+            unlocked ? '✅ مفتوحة' : (t.vipOnly ? '⭐ VIP' : '🔒 ' + t.need + ' نقاط')),
+          el('span', { class: 'badge b-blue' }, t.files + ' ملف' + (data.is_admin || data.is_vip ? '/غير محدود' : ''))));
+    }));
+}
+
+// ---------- Upload tab ---------- //
+let uploadState = { tier: 1, mode: 'auto', file: null };
+
+function renderUpload(data) {
+  const card = el('div', { class: 'card' },
+    el('div', { class: 'quote' }, '📤 ارفع ملف البوت بتاعك (Python / PHP / Node.js). البلتفورم هيستخرج التوكن ويشغّله أوتوماتيك.'),
+    el('label', {}, '🎚 اختر السرعة'),
+    el('div', { class: 'tier-pick' },
+      [1,2,3,4,5].map(l => {
+        const need = [0,5,10,20,0][l-1];
+        const isVipTier = (l === 5);
+        const unlocked = isVipTier
+          ? (data.is_vip || data.is_admin)
+          : (data.points || 0) >= need;
+        const btn = el('button', {
+          class: (uploadState.tier === l ? 'btn-green active' : 'btn-ghost'),
+          disabled: !unlocked,
+          onclick: () => { uploadState.tier = l; refresh(); },
+        },
+          el('div', { style: 'font-weight: 800;' }, 'T' + l),
+          el('div', { style: 'font-size: 10px; opacity: .85;' }, isVipTier ? 'VIP' : (need + ' نقطة')));
+        return btn;
+      })),
+    el('label', {}, '🔌 وضع التشغيل'),
+    el('div', { class: 'mode-pick' },
+      el('button', {
+        class: (uploadState.mode === 'auto' ? 'btn-green active' : 'btn-ghost'),
+        onclick: () => { uploadState.mode = 'auto'; refresh(); },
+      }, el('div', { style: 'font-weight: 800;' }, '🤖 تلقائي'), el('div', { class: 'muted' }, 'البلتفورم يقرر')),
+      el('button', {
+        class: (uploadState.mode === 'polling' ? 'btn-green active' : 'btn-ghost'),
+        onclick: () => { uploadState.mode = 'polling'; refresh(); },
+      }, el('div', { style: 'font-weight: 800;' }, '⚡ Polling'), el('div', { class: 'muted' }, 'getUpdates')),
+      el('button', {
+        class: (uploadState.mode === 'webhook' ? 'btn-green active' : 'btn-ghost'),
+        onclick: () => { uploadState.mode = 'webhook'; refresh(); },
+        style: 'grid-column: span 2;',
+      }, el('div', { style: 'font-weight: 800;' }, '🌐 Webhook'), el('div', { class: 'muted' }, 'تلجرام يبعت التحديثات لسيرفرنا'))),
+    el('label', {}, '📄 الملف'),
+    el('div', {
+      class: 'file-zone',
+      onclick: () => document.getElementById('fileInput').click(),
+    },
+      el('div', { class: 'p' }, '📁'),
+      el('div', {}, uploadState.file ? uploadState.file.name : 'اضغط لاختيار ملف بوت'),
+      el('div', { class: 'muted' }, '.py / .php / .js / .zip / .rar')),
+    el('input', {
+      id: 'fileInput', type: 'file', accept: '.py,.php,.js,.zip,.rar', style: 'display: none;',
+      onchange: (e) => { uploadState.file = e.target.files[0]; refresh(); },
+    }),
+    el('div', { style: 'margin-top: 12px;' },
+      el('button', {
+        class: 'btn-green', style: 'width: 100%;',
+        disabled: !uploadState.file,
+        onclick: doUpload,
+      }, '🚀 رفع وتشغيل البوت'))
+  );
+  return card;
+}
+
+async function doUpload() {
+  if (!uploadState.file) return;
+  const fd = new FormData();
+  fd.append('file', uploadState.file);
+  fd.append('tier', String(uploadState.tier));
+  fd.append('mode', uploadState.mode);
+
+  const root = document.getElementById('root');
+  root.innerHTML = '';
+  root.append(el('div', { class: 'card center' }, '⏳ بنرفع الملف ونثبّت المكتبات...'));
+
+  try {
+    const resp = await api('/app/api/upload', { method: 'POST', body: fd });
+    toast('🎉 تم رفع البوت بنجاح');
+    uploadState = { tier: uploadState.tier, mode: uploadState.mode, file: null };
+    state.me = await api('/app/api/me');
+    state.tab = 'bots';
+    refresh();
+  } catch (e) {
+    root.innerHTML = '';
+    let parsed = null;
+    try { parsed = JSON.parse(e.message); } catch (_err) { parsed = null; }
+    const card = el('div', { class: 'card err' });
+    if (parsed && parsed.error === 'security_scan_failed') {
+      card.append(el('div', { style: 'font-weight: 700; font-size: 16px;' },
+        parsed.banned ? '🚫 تم حظرك تلقائياً' : '🛡️ تم رفض الملف من فحص الأمان'));
+      const sub = parsed.banned
+        ? 'حاولت رفع 3 ملفات مشبوهة. تواصل مع @MCV_M إن كنت تعتقد أن هذا خطأ.'
+        : 'المحاولة ' + parsed.attempts + '/3 — عند 3 محاولات سيتم حظرك تلقائياً.';
+      card.append(el('div', { class: 'muted', style: 'margin-top: 8px;' }, sub));
+      const list = el('ul', { style: 'margin: 10px 0 0 0; padding-right: 16px;' });
+      (parsed.risks || []).slice(0, 12).forEach(r => {
+        const li = el('li', { style: 'margin-bottom: 4px;' });
+        li.innerHTML = r;
+        list.append(li);
+      });
+      card.append(list);
+    } else {
+      card.append(el('div', { style: 'font-weight: 700;' }, '❌ فشل الرفع'));
+      card.append(el('div', { class: 'muted', style: 'margin-top: 6px;' }, e.message));
+    }
+    card.append(el('button', { class: 'btn-blue', style: 'margin-top: 10px;', onclick: refresh }, '↩️ رجوع'));
+    root.append(card);
+  }
+}
+
+// ---------- Bots tab ---------- //
+function renderBots(data) {
+  const bots = data.bots || [];
+  if (!bots.length) {
+    return el('div', { class: 'card center' },
+      el('h3', {}, '🤖 لا توجد بوتات'),
+      el('div', { class: 'muted' }, 'ارفع أول بوت ليك من تبويب الرفع.'),
+      el('button', { class: 'btn-green', style: 'margin-top: 12px;', onclick: () => switchTab('upload') }, '📤 رفع بوت جديد'));
+  }
+  return el('div', {}, bots.map(renderBotCard));
+}
+
+function renderBotCard(b) {
+  return el('div', { class: 'bot' },
+    el('div', { class: 'row' },
+      el('div', { class: 'name' }, '@' + (b.bot_username || b.name)),
+      el('div', {}, statusBadge(b.status), ' ', tierBadge(b.tier))),
+    el('div', { class: 'lang' }, '📝 ' + b.name + ' • ' + b.language + ' • ' + (b.use_webhook ? '🌐 Webhook' : '⚡ Polling')),
+    b.webhook_url ? el('pre', {}, b.webhook_url) : '',
+    el('div', { class: 'actions' },
+      el('button', { class: 'btn-green', onclick: () => botAction(b.id, 'start') },   '▶️ تشغيل'),
+      el('button', { class: 'btn-red',   onclick: () => botAction(b.id, 'stop') },    '⏹ إيقاف'),
+      el('button', { class: 'btn-blue',  onclick: () => botAction(b.id, 'restart') }, '🔄 إعادة'),
+      el('button', { class: 'btn-blue',  onclick: () => showLogs(b.id, b.name) },     '📜 السجل'),
+      el('button', { class: 'btn-red',   onclick: () => mcvEditBot(b) },               '🔴 عدّل بـ MCV'),
+      el('button', { class: 'btn-red',   onclick: () => changeBotToken(b) },           '🔑 تغيير التوكن'),
+      el('button', { class: 'btn-red',   onclick: () => confirmDelete(b.id, b.name) }, '🗑 حذف')));
+}
+
+async function mcvEditBot(b) {
+  const inst = prompt('إيه التعديل اللي عاوزه MCV يعمله على ' + (b.bot_username ? '@' + b.bot_username : b.name) + '؟');
+  if (!inst || !inst.trim()) return;
+  toast('🤖 MCV بيعدّل…');
+  try {
+    const r = await api('/app/api/mcv/bots/' + b.id + '/edit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ instructions: inst, apply: false }),
+    });
+    const ok = confirm('MCV جهّز كود معدّل (' + r.code.length + ' حرف).\n\nتطبّقه دلوقتي وتعيد التشغيل؟');
+    if (!ok) {
+      // Offer to download the proposed code if not applying.
+      const blob = new Blob([r.code], { type: 'text/x-python' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = (r.name || 'edited.py');
+      a.click();
+      URL.revokeObjectURL(a.href);
+      toast('💾 تم تحميل النسخة المقترحة بدون تطبيق.');
+      return;
+    }
+    const applied = await api('/app/api/mcv/bots/' + b.id + '/edit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ instructions: inst, apply: true }),
+    });
+    toast(applied.status === 'running' ? '✅ التعديل اتطبق والبوت اشتغل' : ('⚠️ ' + (applied.error || 'تطبق لكن في خطأ')));
+    state.me = await api('/app/api/me');
+    refresh();
+  } catch (e) { toast('❌ ' + e.message, false); }
+}
+
+async function changeBotToken(b) {
+  const tok = prompt('ابعت التوكن الجديد للبوت ' + (b.bot_username ? '@' + b.bot_username : b.name) + ':');
+  if (!tok || !tok.trim()) return;
+  try {
+    const r = await api('/app/api/mcv/bots/' + b.id + '/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: tok.trim() }),
+    });
+    toast('✅ التوكن اتغير. اليوزر الجديد: @' + (r.bot_username || ''));
+    state.me = await api('/app/api/me');
+    refresh();
+  } catch (e) { toast('❌ ' + e.message, false); }
+}
+
+async function botAction(id, action) {
+  try {
+    const r = await api('/app/api/bots/' + id + '/' + action, { method: 'POST' });
+    toast(action === 'stop' ? '⏹ تم الإيقاف' : action === 'restart' ? '🔄 تم إعادة التشغيل' : '▶️ تم التشغيل');
+    state.me = await api('/app/api/me');
+    refresh();
+  } catch (e) { toast('❌ ' + e.message, false); }
+}
+
+async function confirmDelete(id, name) {
+  if (!confirm('هل أنت متأكد من حذف ' + name + '؟')) return;
+  try {
+    await api('/app/api/bots/' + id + '/delete', { method: 'POST' });
+    toast('🗑 تم الحذف');
+    state.me = await api('/app/api/me');
+    refresh();
+  } catch (e) { toast('❌ ' + e.message, false); }
+}
+
+async function showLogs(id, name) {
+  try {
+    const t = await api('/app/api/bots/' + id + '/logs');
+    const overlay = el('div', {
+      style: 'position: fixed; inset: 0; background: rgba(0,0,0,.85); z-index: 50; padding: 14px; overflow: auto;',
+      onclick: (e) => { if (e.target === overlay) overlay.remove(); },
+    },
+      el('div', { class: 'card', style: 'max-width: 600px; margin: 0 auto;' },
+        el('div', { class: 'row' },
+          el('h3', {}, '📜 ' + name),
+          el('button', { class: 'btn-red copy-btn', onclick: () => overlay.remove() }, '✕ إغلاق')),
+        el('pre', { style: 'max-height: 65vh;' }, t)));
+    document.body.appendChild(overlay);
+  } catch (e) { toast('❌ ' + e.message, false); }
+}
+
+// ---------- Invite tab ---------- //
+async function renderInvite() {
+  const wrap = el('div', { class: 'card center' }, 'جاري تحميل الإحالة…');
+  api('/app/api/invite').then(d => {
+    wrap.innerHTML = '';
+    wrap.classList.remove('center');
+    wrap.append(
+      el('h3', {}, '👥 رابط دعوتك'),
+      el('div', { class: 'quote' }, '+1 نقطة لكل صديق يبدأ البوت من رابطك. لا يتم العد لو الصديق منضم قبل كده.'),
+      el('label', {}, '🔗 الرابط'),
+      el('div', { class: 'invite-link' },
+        el('code', {}, d.link),
+        el('button', { class: 'btn-blue copy-btn', onclick: () => copy(d.link) }, '📋')),
+      el('div', { class: 'grid-2', style: 'margin-top: 14px;' },
+        el('div', { class: 'stat' }, el('div', { class: 'v' }, String(d.points)), el('div', { class: 'l' }, '💎 النقاط')),
+        el('div', { class: 'stat' }, el('div', { class: 'v' }, String(d.referrals)), el('div', { class: 'l' }, '👥 الإحالات'))),
+      el('button', {
+        class: 'btn-green', style: 'width: 100%; margin-top: 12px;',
+        onclick: () => {
+          if (tg && tg.openTelegramLink) {
+            tg.openTelegramLink('https://t.me/share/url?url=' + encodeURIComponent(d.link));
+          } else {
+            window.open('https://t.me/share/url?url=' + encodeURIComponent(d.link), '_blank');
+          }
+        }
+      }, '📨 مشاركة الرابط'));
+  }).catch(e => { wrap.textContent = '❌ ' + e.message; });
+  return wrap;
+}
+
+function copy(text) {
+  navigator.clipboard.writeText(text).then(() => toast('📋 تم النسخ'));
+}
+
+// ---------- Admin tab ---------- //
+// Three views: 'list' (search + users), 'profile' (single user + bots),
+// 'bot' (single bot details incl. token).
+let adminState = { view: 'list', query: '', userId: null, botId: null };
+
+async function renderAdmin(data) {
+  if (!data.is_admin) return el('div', { class: 'card err' }, 'غير مصرّح');
+  if (adminState.view === 'profile' && adminState.userId) {
+    return renderAdminProfile(adminState.userId);
+  }
+  if (adminState.view === 'bot' && adminState.botId) {
+    return renderAdminBotDetail(adminState.botId);
+  }
+  return renderAdminList();
+}
+
+function renderMcvCredsCard() {
+  const card = el('div', { class: 'card' }, 'جاري التحميل…');
+  api('/app/api/admin/mcv/credentials').then((s) => {
+    card.innerHTML = '';
+    const idIn   = el('input', { type: 'text', placeholder: 'x-id-token (Firebase JWT)' });
+    const brIn   = el('input', { type: 'text', placeholder: 'Bearer (اتركه فاضي لو نفس الـ id-token)' });
+    const uidIn  = el('input', { type: 'text', placeholder: 'uid (Firebase user id)' });
+    const emIn   = el('input', { type: 'text', placeholder: 'email' });
+    const apiIn  = el('input', { type: 'text', placeholder: 'API URL' });
+    const modIn  = el('input', { type: 'text', placeholder: 'aiKey / model (claude-opus-4.6)' });
+    uidIn.value = s.uid || '';
+    emIn.value = s.email || '';
+    apiIn.value = s.api_url || '';
+    modIn.value = s.model || '';
+
+    card.append(
+      el('h3', {}, '🔴 إعدادات MCV (API)'),
+      el('div', { class: 'quote' },
+        'الـ JWT بتاع Firebase ساعة واحدة. لما يفصل، الصق التوكن الجديد هنا.'),
+      el('div', { class: 'muted', style: 'margin-bottom: 8px;' },
+        '✅ الحالة: ' + (s.configured ? 'مفعّل' : 'غير مفعّل') + ' • '
+        + 'id-token: ' + (s.id_token_preview || '—') + ' • '
+        + 'bearer: ' + (s.bearer_preview || '—')),
+      el('div', { style: 'display: grid; gap: 6px;' },
+        idIn, brIn, uidIn, emIn, apiIn, modIn),
+      el('div', { class: 'actions' },
+        el('button', { class: 'btn-green',
+          onclick: async () => {
+            try {
+              await api('/app/api/admin/mcv/credentials', {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({
+                  id_token: idIn.value || null,
+                  bearer: brIn.value || null,
+                  uid: uidIn.value || null,
+                  email: emIn.value || null,
+                  api_url: apiIn.value || null,
+                  model: modIn.value || null,
+                }),
+              });
+              toast('💾 تم الحفظ');
+              refresh();
+            } catch (e) { toast('❌ ' + e.message, false); }
+          }
+        }, '💾 حفظ'),
+        el('button', { class: 'btn-blue',
+          onclick: async () => {
+            try {
+              const r = await api('/app/api/mcv/chat', {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ text: 'قول مرحبا في كلمة واحدة', history: [] }),
+              });
+              toast('✅ شغّال: ' + (r.reply || '').slice(0, 60));
+            } catch (e) { toast('❌ ' + e.message, false); }
+          }
+        }, '🧪 جرّب الاتصال')));
+  }).catch((e) => { card.textContent = '❌ ' + e.message; });
+  return card;
+}
+
+function renderMcvModelsCard() {
+  // A per-task model picker. Each row = one task (chat, code, review,
+  // vision) with a <select> of all available aiKeys. Saves with a
+  // single click.
+  const card = el('div', { class: 'card' }, 'جاري تحميل الموديلات…');
+  const TASK_LABELS = {
+    chat:   { ico: '💬', name: 'الدردشة العادية' },
+    code:   { ico: '🛠️', name: 'إنشاء وتعديل البوتات' },
+    review: { ico: '🔍', name: 'مراجعة الأكواد' },
+    vision: { ico: '👁',  name: 'تحليل الصور' },
+  };
+  const TIER_CSS = { danger: 'btn-red', success: 'btn-green', primary: 'btn-blue' };
+
+  api('/app/api/admin/mcv/models').then((d) => {
+    card.innerHTML = '';
+    const sels = {};
+    const rows = [];
+    (d.tasks || []).forEach((task) => {
+      const sel = el('select', { style: 'flex:1; padding:8px; border-radius:6px;' });
+      (d.models || []).forEach((m) => {
+        const opt = el('option', { value: m.key }, m.label + ' (' + m.key + ')');
+        if (m.key === d.current[task]) opt.selected = true;
+        sel.appendChild(opt);
+      });
+      sels[task] = sel;
+      const lbl = TASK_LABELS[task] || { ico: '⚙️', name: task };
+      rows.push(el('div', {
+        style: 'display:flex; align-items:center; gap:8px; margin-bottom:6px;',
+      }, el('div', { style: 'min-width:140px;' }, lbl.ico + ' ' + lbl.name), sel));
+    });
+    card.append(
+      el('h3', {}, '🤖 موديل الذكاء الاصطناعي'),
+      el('div', { class: 'quote' },
+        'اختار أقوى موديل لكل مهمة. التغيير بياخد effect على المكالمة الجاية.'),
+      ...rows,
+      el('div', { class: 'actions', style: 'margin-top: 10px;' },
+        el('button', { class: 'btn-green',
+          onclick: async (ev) => {
+            const btn = ev.target;
+            btn.disabled = true; btn.textContent = '⏳ بحفظ…';
+            try {
+              const selections = {};
+              Object.keys(sels).forEach((t) => { selections[t] = sels[t].value; });
+              await api('/app/api/admin/mcv/models', {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ selections }),
+              });
+              toast('💾 الموديلات اتحفظت');
+            } catch (e) { toast('❌ ' + e.message, false); }
+            finally { btn.disabled = false; btn.textContent = '💾 حفظ'; }
+          }
+        }, '💾 حفظ'),
+        el('button', { class: 'btn-blue',
+          onclick: () => { card.innerHTML = 'جاري إعادة التحميل…';
+            setTimeout(() => { card.replaceWith(renderMcvModelsCard()); }, 100); }
+        }, '🔄 إعادة تحميل')),
+    );
+  }).catch((e) => { card.textContent = '❌ ' + e.message; });
+  return card;
+}
+
+function renderBroadcastCard() {
+  const card = el('div', { class: 'card' });
+  const ta = el('textarea', {
+    placeholder: 'اكتب رسالة الإذاعة (HTML مدعوم: <b> <i> <code> <a>)…',
+  });
+  const fileInput = el('input', { type: 'file', accept: 'image/*', style: 'display: none;' });
+  const fileLabel = el('div', { class: 'muted', style: 'margin-top: 4px;' },
+    'لم يتم اختيار صورة');
+  fileInput.addEventListener('change', () => {
+    const f = fileInput.files && fileInput.files[0];
+    fileLabel.textContent = f ? ('🖼️ ' + f.name) : 'لم يتم اختيار صورة';
+  });
+  const status = el('div', { style: 'margin-top: 10px;' });
+  card.append(
+    el('h3', {}, '📡 إذاعة لكل المستخدمين'),
+    el('div', { class: 'quote' },
+      'تبعت رسالة (مع أو بدون صورة) لكل المستخدمين المسجلين في البوت. ' +
+      'المحظورين بيتعداهم تلقائياً.'),
+    ta,
+    el('div', { style: 'margin-top: 8px;' },
+      el('label', { class: 'btn-blue', style: 'cursor: pointer; display: inline-block; padding: 8px 12px;' },
+        '📎 اختيار صورة', fileInput)),
+    fileLabel,
+    el('div', { class: 'actions', style: 'margin-top: 10px;' },
+      el('button', {
+        class: 'btn-green',
+        onclick: async (ev) => {
+          const btn = ev.target;
+          if (!ta.value.trim() && !(fileInput.files && fileInput.files[0])) {
+            toast('❌ ابعت نص أو صورة', false);
+            return;
+          }
+          if (!confirm('هتبعت لكل المستخدمين، متأكد؟')) return;
+          btn.disabled = true;
+          btn.textContent = '⏳ جاري الإرسال…';
+          status.textContent = '⏳ بنبعت للمستخدمين...';
+          const fd = new FormData();
+          fd.append('text', ta.value);
+          if (fileInput.files && fileInput.files[0]) {
+            fd.append('image', fileInput.files[0]);
+          }
+          try {
+            const r = await api('/app/api/admin/broadcast', { method: 'POST', body: fd });
+            status.innerHTML =
+              '✅ <b>تم الانتهاء.</b><br>' +
+              '👥 إجمالي: ' + r.total + ' • ✅ تم: ' + r.delivered +
+              ' • ⛔ حظر: ' + r.blocked + ' • ❌ فشل: ' + r.failed +
+              (r.skipped_banned ? ' • 🚫 محظورين: ' + r.skipped_banned : '');
+            toast('✅ تم الإرسال');
+            ta.value = '';
+            fileInput.value = '';
+            fileLabel.textContent = 'لم يتم اختيار صورة';
+          } catch (e) {
+            status.textContent = '❌ ' + e.message;
+            toast('❌ فشل', false);
+          } finally {
+            btn.disabled = false;
+            btn.textContent = '📡 ابعت';
+          }
+        },
+      }, '📡 ابعت')),
+    status,
+  );
+  return card;
+}
+
+function renderAdminList() {
+  const wrap = el('div', {});
+
+  // Announcement card
+  const annCard = el('div', { class: 'card' }, 'جاري التحميل…');
+  api('/app/api/admin/announcement').then(({ value }) => {
+    annCard.innerHTML = '';
+    const ta = el('textarea', { placeholder: 'النص اللي هيظهر فوق رسالة الترحيب لكل المستخدمين...' });
+    ta.value = value || '';
+    annCard.append(
+      el('h3', {}, '📣 إعلان الترحيب'),
+      el('div', { class: 'quote' }, 'يظهر داخل اقتباس فوق رسالة الترحيب لكل المستخدمين. اتركه فاضي لمسحه.'),
+      ta,
+      el('div', { class: 'actions' },
+        el('button', {
+          class: 'btn-green',
+          onclick: async () => {
+            try {
+              await api('/app/api/admin/announcement', {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ text: ta.value }),
+              });
+              toast('💾 تم الحفظ');
+            } catch (e) { toast('❌ ' + e.message, false); }
+          }
+        }, '💾 حفظ'),
+        el('button', {
+          class: 'btn-red',
+          onclick: async () => {
+            ta.value = '';
+            try {
+              await api('/app/api/admin/announcement', {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ text: '' }),
+              });
+              toast('🗑 تم المسح');
+            } catch (e) { toast('❌ ' + e.message, false); }
+          }
+        }, '🗑 مسح')));
+  });
+  wrap.append(annCard);
+
+  // MCV credentials card
+  wrap.append(renderMcvCredsCard());
+
+  // AI model picker (per task)
+  wrap.append(renderMcvModelsCard());
+
+  // Broadcast card
+  wrap.append(renderBroadcastCard());
+
+  // Search + users card
+  const usersCard = el('div', { class: 'card' });
+  const input = el('input', {
+    type: 'text', placeholder: '🔎 ابحث بالـ ID أو اليوزر أو الاسم...',
+  });
+  input.value = adminState.query || '';
+  const list = el('div', {}, 'جاري تحميل المستخدمين…');
+
+  async function reload() {
+    list.innerHTML = '⏳ جاري البحث…';
+    try {
+      const url = '/app/api/admin/users' + (input.value
+        ? ('?q=' + encodeURIComponent(input.value))
+        : '');
+      const users = await api(url);
+      list.innerHTML = '';
+      if (!users.length) {
+        list.append(el('div', { class: 'muted center', style: 'padding: 16px;' },
+          'لا توجد نتائج.'));
+        return;
+      }
+      list.append(el('div', { class: 'muted', style: 'margin: 6px 0 8px;' },
+        'عدد النتائج: ' + users.length));
+      users.forEach(u => list.append(renderUserRow(u)));
+    } catch (e) {
+      list.textContent = '❌ ' + e.message;
+    }
+  }
+  let debounce;
+  input.addEventListener('input', () => {
+    adminState.query = input.value;
+    clearTimeout(debounce);
+    debounce = setTimeout(reload, 300);
+  });
+  usersCard.append(
+    el('h3', {}, '👥 إدارة المستخدمين'),
+    el('div', { class: 'quote' },
+      'اضغط على أي مستخدم لعرض ملفه الشخصي وبوتاته الكاملة.'),
+    input,
+    list,
+  );
+  reload();
+  wrap.append(usersCard);
+
+  return wrap;
+}
+
+function renderUserRow(u) {
+  return el('div', {
+    class: 'bot',
+    style: 'cursor: pointer;',
+    onclick: () => {
+      adminState.view = 'profile';
+      adminState.userId = u.user_id;
+      refresh();
+    },
+  },
+    el('div', { class: 'row' },
+      el('div', {},
+        el('div', { class: 'name' },
+          (u.first_name || '') + (u.last_name ? ' ' + u.last_name : '') + (u.username ? ' (@' + u.username + ')' : '')),
+        el('div', { class: 'muted' }, 'ID: ' + u.user_id)),
+      el('div', {},
+        u.is_admin  ? el('span', { class: 'badge b-blue' }, '👑') : '', ' ',
+        u.is_vip    ? el('span', { class: 'badge b-green' }, '⭐') : '', ' ',
+        u.is_banned ? el('span', { class: 'badge b-red' }, '🚫') : '')),
+    el('div', { class: 'muted', style: 'margin-top: 4px;' },
+      '💎 ' + (u.points || 0) + ' • 🤖 ' + (u.bots_count || 0) + ' بوت • 👥 ' + (u.referrals || 0) + ' إحالة'));
+}
+
+async function renderAdminProfile(targetUid) {
+  const wrap = el('div', {});
+  wrap.append(el('div', { class: 'card center' }, '⏳ جاري تحميل الملف…'));
+  try {
+    const data = await api('/app/api/admin/users/' + targetUid);
+    wrap.innerHTML = '';
+    const u = data.user;
+    const fullName = (u.first_name || '') + (u.last_name ? ' ' + u.last_name : '');
+
+    wrap.append(el('div', { class: 'card' },
+      el('div', { class: 'row' },
+        el('button', {
+          class: 'btn-ghost copy-btn',
+          onclick: () => { adminState.view = 'list'; adminState.userId = null; refresh(); },
+        }, '↩ رجوع'),
+        el('div', { style: 'font-weight: 800;' }, '👤 ' + (fullName || '—'))),
+      el('div', { style: 'margin-top: 10px;' },
+        u.is_admin  ? el('span', { class: 'badge b-blue' }, '👑 أدمن') : '', ' ',
+        u.is_vip    ? el('span', { class: 'badge b-green' }, '⭐ VIP') : '', ' ',
+        u.is_banned ? el('span', { class: 'badge b-red' }, '🚫 محظور') : '')));
+
+    // Personal info
+    const info = [
+      ['🆔 ID', String(u.user_id)],
+      ['👤 يوزر', u.username ? '@' + u.username : '—'],
+      ['📛 الاسم', fullName || '—'],
+      ['📞 الهاتف', u.contact_phone || '—'],
+      ['🌐 اللغة', u.language || '—'],
+      ['💎 النقاط', String(u.points || 0)],
+      ['👥 الإحالات', String(data.referrals || 0)],
+      ['🔗 كود الإحالة', u.referral_code || '—'],
+      ['👤 المُحيل', u.referrer_id ? String(u.referrer_id) : '—'],
+      ['📅 الانضمام', fmtDate(u.join_date)],
+      ['👁 آخر ظهور', fmtDate(u.last_seen)],
+      ['📲 شارك جهة الاتصال', fmtDate(u.contact_shared_at)],
+    ];
+    const infoCard = el('div', { class: 'card' }, el('h3', {}, '📋 المعلومات الشخصية'));
+    info.forEach(([k, v]) => {
+      infoCard.append(el('div', { class: 'row', style: 'padding: 4px 0;' },
+        el('div', { class: 'muted' }, k),
+        el('div', { style: 'font-weight: 600; word-break: break-all; text-align: end;' }, v)));
+    });
+    wrap.append(infoCard);
+
+    // Role actions
+    wrap.append(el('div', { class: 'card' },
+      el('h3', {}, '🛠 الإجراءات'),
+      el('div', { class: 'actions' },
+        el('button', {
+          class: 'btn-blue',
+          onclick: () => roleToggle(u.user_id, 'vip', !u.is_vip),
+        }, u.is_vip ? '❌ إلغاء VIP' : '⭐ ترقية VIP'),
+        el('button', {
+          class: 'btn-blue',
+          onclick: () => roleToggle(u.user_id, 'admin', !u.is_admin),
+        }, u.is_admin ? '⛔ إزالة أدمن' : '👑 جعل أدمن'),
+        el('button', {
+          class: 'btn-red',
+          onclick: () => roleToggle(u.user_id, 'banned', !u.is_banned),
+        }, u.is_banned ? '✅ فك الحظر' : '🚫 حظر'))));
+
+    // Bots
+    const botsCard = el('div', { class: 'card' },
+      el('h3', {}, '🤖 بوتات المستخدم (' + data.bots.length + ')'));
+    if (!data.bots.length) {
+      botsCard.append(el('div', { class: 'muted' }, 'لا يوجد بوتات.'));
+    } else {
+      data.bots.forEach(b => {
+        botsCard.append(el('div', {
+          class: 'bot',
+          style: 'cursor: pointer;',
+          onclick: () => {
+            adminState.view = 'bot';
+            adminState.botId = b.id;
+            refresh();
+          },
+        },
+          el('div', { class: 'row' },
+            el('div', { class: 'name' }, '@' + (b.bot_username || b.name)),
+            el('div', {}, statusBadge(b.status), ' ', tierBadge(b.tier))),
+          el('div', { class: 'lang' },
+            '📝 ' + b.name + ' • ' + b.language + ' • ' + (b.use_webhook ? '🌐 Webhook' : '⚡ Polling')),
+          el('div', { class: 'muted' }, 'اضغط لعرض التوكن والتفاصيل ←')));
+      });
+    }
+    wrap.append(botsCard);
+  } catch (e) {
+    wrap.innerHTML = '';
+    wrap.append(el('div', { class: 'card err' }, '❌ ' + e.message,
+      el('button', {
+        class: 'btn-blue', style: 'margin-top: 10px;',
+        onclick: () => { adminState.view = 'list'; refresh(); },
+      }, '↩ رجوع')));
+  }
+  return wrap;
+}
+
+async function renderAdminBotDetail(botId) {
+  const wrap = el('div', {});
+  wrap.append(el('div', { class: 'card center' }, '⏳ جاري تحميل البوت…'));
+  try {
+    const b = await api('/app/api/admin/bots/' + botId);
+    wrap.innerHTML = '';
+    wrap.append(el('div', { class: 'card' },
+      el('div', { class: 'row' },
+        el('button', {
+          class: 'btn-ghost copy-btn',
+          onclick: () => {
+            // back to user profile if we came from one, else list
+            if (adminState.userId) {
+              adminState.view = 'profile';
+              adminState.botId = null;
+            } else {
+              adminState.view = 'list';
+              adminState.botId = null;
+            }
+            refresh();
+          },
+        }, '↩ رجوع'),
+        el('div', { style: 'font-weight: 800;' }, '🤖 @' + (b.bot_username || b.name))),
+      el('div', { style: 'margin-top: 10px;' },
+        statusBadge(b.status), ' ', tierBadge(b.tier), ' ', modeBadge(b.use_webhook))));
+
+    // Token (highlighted)
+    wrap.append(el('div', { class: 'card' },
+      el('h3', {}, '🔑 التوكن'),
+      el('div', { class: 'quote' },
+        '⚠️ التوكن سرّي. لا تشاركه مع أي حد. استخدم زر النسخ.'),
+      el('pre', { style: 'background: rgba(220,38,38,.18); border: 1px solid rgba(220,38,38,.5);' }, b.token || '—'),
+      el('div', { class: 'actions' },
+        el('button', { class: 'btn-blue', onclick: () => copy(b.token || '') }, '📋 نسخ التوكن'),
+        b.bot_username ? el('button', {
+          class: 'btn-blue',
+          onclick: () => {
+            const link = 'https://t.me/' + b.bot_username;
+            if (tg && tg.openTelegramLink) tg.openTelegramLink(link);
+            else window.open(link, '_blank');
+          },
+        }, '🔗 فتح البوت') : '')));
+
+    // Owner
+    wrap.append(el('div', { class: 'card' },
+      el('h3', {}, '👤 المالك'),
+      el('div', { class: 'row' },
+        el('div', { class: 'muted' }, 'ID'),
+        el('div', { style: 'font-weight: 600;' }, String(b.owner_id))),
+      el('div', { class: 'row' },
+        el('div', { class: 'muted' }, 'يوزر'),
+        el('div', { style: 'font-weight: 600;' }, b.owner_username ? '@' + b.owner_username : '—')),
+      el('div', { class: 'row' },
+        el('div', { class: 'muted' }, 'الاسم'),
+        el('div', { style: 'font-weight: 600;' }, b.owner_first_name || '—')),
+      el('button', {
+        class: 'btn-blue', style: 'width: 100%; margin-top: 8px;',
+        onclick: () => {
+          adminState.view = 'profile';
+          adminState.userId = b.owner_id;
+          adminState.botId = null;
+          refresh();
+        },
+      }, '👤 عرض ملف المالك')));
+
+    // Bot info
+    const info = [
+      ['📛 اسم الملف', b.name],
+      ['💻 اللغة', b.language],
+      ['🔌 الموود', b.use_webhook ? '🌐 Webhook' : '⚡ Polling'],
+      ['🚪 المنفذ', b.port ? String(b.port) : '—'],
+      ['🆔 PID', b.pid ? String(b.pid) : '—'],
+      ['🎚 السرعة', 'T' + b.tier],
+      ['🔄 عدد التشغيلات', String(b.restart_count || 0)],
+      ['🕐 آخر تشغيل', fmtDate(b.last_started_at)],
+      ['📅 الإنشاء', fmtDate(b.created_at)],
+    ];
+    if (b.webhook_url) info.push(['🌐 رابط الويب هوك', b.webhook_url]);
+    if (b.last_error) info.push(['⚠️ آخر خطأ', b.last_error]);
+
+    const infoCard = el('div', { class: 'card' }, el('h3', {}, '📋 معلومات البوت'));
+    info.forEach(([k, v]) => {
+      infoCard.append(el('div', { class: 'row', style: 'padding: 4px 0;' },
+        el('div', { class: 'muted' }, k),
+        el('div', { style: 'font-weight: 600; word-break: break-all; text-align: end;' }, v)));
+    });
+    wrap.append(infoCard);
+
+    // File path
+    wrap.append(el('div', { class: 'card' },
+      el('h3', {}, '📄 مسار الملف'),
+      el('pre', {}, b.file_path || '—')));
+
+    // Actions
+    wrap.append(el('div', { class: 'card' },
+      el('h3', {}, '🛠 إجراءات'),
+      el('div', { class: 'actions' },
+        el('button', { class: 'btn-green', onclick: () => botActionAndRefresh(b.id, 'start') },   '▶️ تشغيل'),
+        el('button', { class: 'btn-red',   onclick: () => botActionAndRefresh(b.id, 'stop') },    '⏹ إيقاف'),
+        el('button', { class: 'btn-blue',  onclick: () => botActionAndRefresh(b.id, 'restart') }, '🔄 إعادة'),
+        el('button', { class: 'btn-blue',  onclick: () => showLogs(b.id, b.name) },               '📜 السجل'),
+        el('button', { class: 'btn-red',   onclick: () => confirmDeleteAdmin(b.id, b.name) },     '🗑 حذف'))));
+  } catch (e) {
+    wrap.innerHTML = '';
+    wrap.append(el('div', { class: 'card err' }, '❌ ' + e.message,
+      el('button', {
+        class: 'btn-blue', style: 'margin-top: 10px;',
+        onclick: () => {
+          adminState.view = adminState.userId ? 'profile' : 'list';
+          adminState.botId = null;
+          refresh();
+        },
+      }, '↩ رجوع')));
+  }
+  return wrap;
+}
+
+async function botActionAndRefresh(id, action) {
+  await botAction(id, action);
+}
+
+async function confirmDeleteAdmin(id, name) {
+  if (!confirm('حذف بوت ' + name + '؟ لا يمكن التراجع.')) return;
+  try {
+    await api('/app/api/bots/' + id + '/delete', { method: 'POST' });
+    toast('🗑 تم الحذف');
+    adminState.botId = null;
+    adminState.view = adminState.userId ? 'profile' : 'list';
+    refresh();
+  } catch (e) { toast('❌ ' + e.message, false); }
+}
+
+function fmtDate(iso) {
+  if (!iso) return '—';
+  try {
+    const d = new Date(iso);
+    return d.toLocaleString('ar-EG', {
+      year: 'numeric', month: 'short', day: '2-digit',
+      hour: '2-digit', minute: '2-digit',
+    });
+  } catch { return iso; }
+}
+
+async function roleToggle(uid, role, value) {
+  try {
+    await api('/app/api/admin/users/' + uid + '/role', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ role, value }),
+    });
+    toast('💾 تم');
+    refresh();
+  } catch (e) { toast('❌ ' + e.message, false); }
+}
+
+// ---------- Plumbing ---------- //
+// ---------- MCV tab ---------- //
+const mcvState = { history: [], log: [], busy: false };
+
+function renderMCV(data) {
+  const container = el('div', {});
+
+  // Intro card with quick actions.
+  container.append(
+    el('div', { class: 'card' },
+      el('h3', {}, '🔴 MCV — المساعد الذكي'),
+      el('div', { class: 'muted', style: 'margin-bottom: 10px;' },
+        'كلّمني عن أي بوت تتمناه أو اطلب تعديل، وأنا هرجعلك بكود جاهز.'),
+      el('div', { class: 'actions' },
+        el('button', { class: 'btn-red', onclick: mcvGenerateBot }, '🤖 اعمل بوت جديد'),
+        el('button', { class: 'btn-blue', onclick: () => switchTab('bots') }, '✏️ عدّل بوت موجود'))));
+
+  // Chat log card.
+  const logDiv = el('div', { id: 'mcv-log', style: 'display: grid; gap: 8px;' });
+  for (const m of mcvState.log) {
+    logDiv.append(renderMcvMessage(m));
+  }
+  if (!mcvState.log.length) {
+    logDiv.append(el('div', { class: 'muted center' },
+      'لا توجد محادثة بعد. اكتب رسالة لـ MCV من تحت.'));
+  }
+  container.append(el('div', { class: 'card' }, logDiv));
+
+  // Input.
+  const input = el('textarea', {
+    id: 'mcv-input', class: '',
+    placeholder: 'اكتب سؤالك أو طلبك… (مثال: ضيف زر مساعدة لبوتي)',
+    style: 'width: 100%; min-height: 80px; padding: 10px; border-radius: 10px; '
+         + 'background: rgba(255,255,255,.04); color: var(--fg); border: 1px solid var(--border); '
+         + 'font-family: inherit; font-size: 14px; resize: vertical;',
+  });
+  const sendBtn = el('button', {
+    id: 'mcv-send', class: 'btn-red', style: 'width: 100%; margin-top: 8px;',
+    onclick: () => mcvSend(input.value),
+  }, '📨 إرسال لـ MCV');
+  container.append(el('div', { class: 'card' }, input, sendBtn));
+
+  return container;
+}
+
+function renderMcvMessage(m) {
+  const wrap = el('div', {
+    style: 'padding: 10px 12px; border-radius: 12px; '
+         + (m.role === 'user'
+              ? 'background: var(--blue-soft); border: 1px solid var(--blue);'
+              : 'background: rgba(255,255,255,.04); border: 1px solid var(--border);'),
+  });
+  wrap.append(el('div', { style: 'font-weight: 700; font-size: 12px; opacity: .8; margin-bottom: 4px;' },
+    m.role === 'user' ? '👤 أنت' : '🤖 MCV'));
+  // Detect code blocks in MCV replies — render as <pre> for readability.
+  const parts = splitFences(m.content);
+  for (const p of parts) {
+    if (p.type === 'code') {
+      wrap.append(el('pre', {}, p.body));
+    } else {
+      wrap.append(el('div', { style: 'white-space: pre-wrap; word-wrap: break-word;' }, p.body));
+    }
+  }
+  return wrap;
+}
+
+function splitFences(text) {
+  const re = /```([a-zA-Z0-9_+-]*)\n([\s\S]*?)```/g;
+  const out = [];
+  let i = 0; let m;
+  while ((m = re.exec(text)) != null) {
+    if (m.index > i) out.push({ type: 'text', body: text.slice(i, m.index) });
+    out.push({ type: 'code', body: m[2], lang: m[1] });
+    i = m.index + m[0].length;
+  }
+  if (i < text.length) out.push({ type: 'text', body: text.slice(i) });
+  return out;
+}
+
+async function mcvSend(text) {
+  if (!text || !text.trim() || mcvState.busy) return;
+  const log = document.getElementById('mcv-log');
+  mcvState.log.push({ role: 'user', content: text });
+  log.append(renderMcvMessage({ role: 'user', content: text }));
+  log.append(el('div', { id: 'mcv-thinking', class: 'muted center' }, '🤖 MCV بيفكر…'));
+  document.getElementById('mcv-input').value = '';
+  mcvState.busy = true;
+  document.getElementById('mcv-send').disabled = true;
+  try {
+    const r = await api('/app/api/mcv/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, history: mcvState.history }),
+    });
+    mcvState.history = r.history;
+    mcvState.log.push({ role: 'assistant', content: r.reply });
+    document.getElementById('mcv-thinking')?.remove();
+    log.append(renderMcvMessage({ role: 'assistant', content: r.reply }));
+  } catch (e) {
+    document.getElementById('mcv-thinking')?.remove();
+    toast('فشل: ' + e.message, false);
+  } finally {
+    mcvState.busy = false;
+    document.getElementById('mcv-send').disabled = false;
+  }
+}
+
+async function mcvGenerateBot() {
+  const desc = prompt('اكتب وصف البوت اللي عاوزه. مثلاً: بوت يرد على /start ويبعت قائمة inline.');
+  if (!desc) return;
+  try {
+    toast('🤖 MCV بيكتب الكود…');
+    const r = await api('/app/api/mcv/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ description: desc }),
+    });
+    // Download the generated file from the browser side.
+    const blob = new Blob([r.code], { type: 'text/x-python' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = r.name || 'mcv_bot.py';
+    a.click();
+    URL.revokeObjectURL(a.href);
+    mcvState.log.push({ role: 'assistant', content: 'حملت ملف **' + (r.name || 'mcv_bot.py') + '** فيه الكود. ارفعه من تبويب 📤 رفع لما تجهز.' });
+    refresh();
+  } catch (e) {
+    toast('فشل: ' + e.message, false);
+  }
+}
+
+function switchTab(tab) {
+  state.tab = tab;
+  document.querySelectorAll('#tabs button').forEach(b => {
+    b.classList.toggle('active', b.dataset.tab === tab);
+  });
+  refresh();
+}
+
+document.querySelectorAll('#tabs button').forEach(b => {
+  b.addEventListener('click', () => switchTab(b.dataset.tab));
+});
+
+async function refresh() {
+  const root = document.getElementById('root');
+  if (!state.me) {
+    try {
+      state.me = await api('/app/api/me');
+    } catch (e) {
+      root.innerHTML = '';
+      root.append(el('div', { class: 'card err' },
+        el('div', { style: 'font-weight: 700;' }, '❌ فشل التحقق'),
+        el('div', { class: 'muted', style: 'margin-top: 6px;' }, e.message),
+        el('div', { class: 'muted', style: 'margin-top: 6px;' }, 'افتح هذا التطبيق من داخل البوت في تلجرام.')));
+      return;
+    }
+  }
+  if (state.me.is_admin) {
+    document.getElementById('adminTabBtn').style.display = '';
+  }
+  root.innerHTML = '';
+  let body;
+  switch (state.tab) {
+    case 'upload': body = renderUpload(state.me); break;
+    case 'bots':   body = renderBots(state.me); break;
+    case 'mcv':    body = renderMCV(state.me); break;
+    case 'invite': body = await renderInvite(); break;
+    case 'admin':  body = await renderAdmin(state.me); break;
+    default:       body = renderHome(state.me);
+  }
+  root.append(body);
+}
+
+refresh();
+</script>
+</body>
+</html>
